@@ -24,13 +24,17 @@ typedef struct _LinkedHashMapNode
     void* value;
     bool is_allocated;
     size_t key_size;
+    struct _LinkedHashMapNode* prev;
+    struct _LinkedHashMapNode* next;
 } LinkedHashMapNode;
 
 typedef struct _LinkedHashMap
 {
-    LinkedHashMapNode* nodes;
     size_t length;
     size_t capacity;
+    LinkedHashMapNode* nodes;
+    LinkedHashMapNode* head;
+    LinkedHashMapNode* tail;
 } LinkedHashMap;
 
 LINKEDHASHMAP_EXPORT LinkedHashMap* linkedhashmap_new(void);
@@ -57,7 +61,7 @@ LINKEDHASHMAP_TEST_EXPORT void linkedhashmap_resize_down(LinkedHashMap* map);
 
 LINKEDHASHMAP_EXPORT void* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size);
 
-LINKEDHASHMAP_EXPORT void linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value);
+LINKEDHASHMAP_EXPORT void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value);
 
 LINKEDHASHMAP_EXPORT void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2);
 
