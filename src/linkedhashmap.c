@@ -56,10 +56,13 @@ void** linkedhashmap_keys(LinkedHashMap* map)
 {
     void** map_keys = (void**)malloc(map->length * sizeof(void*));
     size_t found = 0;
+    LinkedHashMapNode* current = map->head;
 
-    for (size_t i = 0; i < map->capacity; i++)
-        if (map->nodes[i].is_allocated)
-            map_keys[found++] = map->nodes[i].key;
+    while (current != NULL)
+    {
+        map_keys[found++] = current->key;
+        current = current->next;
+    }
 
     return map_keys;
 }
@@ -68,10 +71,13 @@ void** linkedhashmap_values(LinkedHashMap* map)
 {
     void** map_values = malloc(map->length * sizeof(void*));
     size_t found = 0;
+    LinkedHashMapNode* current = map->head;
 
-    for (size_t i = 0; i < map->capacity; i++)
-        if (map->nodes[i].is_allocated)
-            map_values[found++] = map->nodes[i].value;
+    while (current != NULL)
+    {
+        map_values[found++] = current->value;
+        current = current->next;
+    }
 
     return map_values;
 }
@@ -80,14 +86,13 @@ void** linkedhashmap_entries(LinkedHashMap* map)
 {
     void** map_entries = (void**)malloc(map->length * 2 * sizeof(void*));
     size_t found = 0;
+    LinkedHashMapNode* current = map->head;
 
-    for (size_t i = 0; i < map->capacity; i++)
+    while (current != NULL)
     {
-        if (map->nodes[i].is_allocated)
-        {
-            map_entries[found++] = map->nodes[i].key;
-            map_entries[found++] = map->nodes[i].value;
-        }
+        map_entries[found++] = current->key;
+        map_entries[found++] = current->value;
+        current = current->next;
     }
 
     return map_entries;
@@ -99,21 +104,22 @@ void linkedhashmap_resize(LinkedHashMap* map, size_t new_size)
     void** map_values = malloc(map->length * sizeof(void*));
     size_t* map_key_sizes = malloc(map->length * sizeof(size_t));
     size_t found = 0;
+    LinkedHashMapNode* current = map->head;
 
-    for (size_t i = 0; i < map->capacity; i++)
+    while (current != NULL)
     {
-        if (map->nodes[i].is_allocated)
-        {
-            map_keys[found] = map->nodes[i].key;
-            map_values[found] = map->nodes[i].value;
-            map_key_sizes[found] = map->nodes[i].key_size;
-            found++;
-        }
+        map_keys[found] = current->key;
+        map_values[found] = current->value;
+        map_key_sizes[found] = current->key_size;
+        found++;
+        current = current->next;
     }
 
-    map->nodes = (LinkedHashMapNode*)realloc(map->nodes, new_size * sizeof(LinkedHashMapNode));
-    map->capacity = new_size;
     map->length = 0;
+    map->capacity = new_size;
+    map->nodes = (LinkedHashMapNode*)realloc(map->nodes, new_size * sizeof(LinkedHashMapNode));
+    map->head = NULL;
+    map->tail = NULL;
 
     for (size_t i = 0; i < map->capacity; i++)
         map->nodes[i].is_allocated = false;
@@ -159,6 +165,19 @@ void* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size)
     return NULL;
 }
 
+void* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index)
+{
+    LinkedHashMapNode* current = map->head;
+
+    for (size_t i = 0; i < index && current != NULL; i++)
+        current = current->next;
+
+    if (current == NULL)
+        return NULL;
+
+    return current->value;
+}
+
 void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value)
 {
     size_t hashvalue = linkedhashmap_hash(map, key, key_size);
@@ -174,6 +193,19 @@ void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* va
             map->nodes[current].value = value;
             map->nodes[current].is_allocated = true;
             map->nodes[current].key_size = key_size;
+            map->nodes[current].prev = map->tail;
+            map->nodes[current].next = NULL;
+
+            if (map->length == 0)
+            {
+                map->head = &(map->nodes[current]);
+            }
+            else
+            {
+                map->tail->next = &(map->nodes[current]);
+            }
+
+            map->tail = &(map->nodes[current]);
             map->length++;
             return NULL;
         }
@@ -191,9 +223,13 @@ void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* va
 
 void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2)
 {
-    for (size_t i = 0; i < map2->capacity; i++)
-        if (map2->nodes[i].is_allocated)
-            linkedhashmap_set(map1, map2->nodes[i].key, map2->nodes[i].key_size, map2->nodes[i].value);
+    LinkedHashMapNode* current = map2->head;
+
+    while (current != NULL)
+    {
+        linkedhashmap_set(map1, current->key, current->key_size, current->value);
+        current = current->next;
+    }
 }
 
 void* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_size)
@@ -212,6 +248,16 @@ void* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_size)
 
             map->nodes[current].is_allocated = false;
             map->length--;
+
+            if (map->nodes[current].prev != NULL)
+                map->nodes[current].prev->next = map->nodes[current].next;
+            else
+                map->head = map->nodes[current].next;
+
+            if (map->nodes[current].next != NULL)
+                map->nodes[current].next->prev = map->nodes[current].prev;
+            else
+                map->tail = map->nodes[current].prev;
 
             if (map->length <= (map->capacity >> 1) && map->capacity > LINKEDHASHMAP_MIN_SIZE)
                 linkedhashmap_resize_down(map);
@@ -248,13 +294,34 @@ bool linkedhashmap_contains(LinkedHashMap* map, void* key, size_t key_size)
 bool linkedhashmap_equal(LinkedHashMap* map1, LinkedHashMap* map2)
 {
     if (map1->length != map2->length)
-        return 0;
+        return false;
 
     for (size_t i = 0; i < map1->capacity; i++)
         if (map1->nodes[i].is_allocated
             && (!linkedhashmap_contains(map2, map1->nodes[i].key, map1->nodes[i].key_size)
                 || map1->nodes[i].value != linkedhashmap_get(map2, map1->nodes[i].key, map1->nodes[i].key_size)))
             return false;
+
+    return true;
+}
+
+bool linkedhashmap_equal_with_insertion_order(LinkedHashMap* map1, LinkedHashMap* map2)
+{
+    if (map1->length != map2->length)
+        return false;
+
+    LinkedHashMapNode* current1 = map1->head;
+    LinkedHashMapNode* current2 = map2->head;
+
+    while (current1 != NULL)
+    {
+        if (!linkedhashmap_keys_equal(current1->key, current1->key_size, current2->key, current2->key_size)
+            || current1->value != current2->value)
+            return false;
+
+        current1 = current1->next;
+        current2 = current2->next;
+    }
 
     return true;
 }
@@ -272,19 +339,26 @@ void linkedhashmap_clear(LinkedHashMap* map)
 LinkedHashMap* linkedhashmap_copy(LinkedHashMap* map)
 {
     LinkedHashMap* new_map = linkedhashmap_new();
+    LinkedHashMapNode* current = map->head;
 
-    for (size_t i = 0; i < map->capacity; i++)
-        if (map->nodes[i].is_allocated)
-            linkedhashmap_set(new_map, map->nodes[i].key, map->nodes[i].key_size, map->nodes[i].value);
+    while (current != NULL)
+    {
+        linkedhashmap_set(new_map, current->key, current->key_size, current->value);
+        current = current->next;
+    }
 
     return new_map;
 }
 
 void linkedhashmap_foreach(LinkedHashMap* map, void (*fptr)(void*, size_t, void*, void*), void* arg)
 {
-    for (size_t i = 0; i < map->capacity; i++)
-        if (map->nodes[i].is_allocated)
-            (*fptr)(map->nodes[i].key, map->nodes[i].key_size, map->nodes[i].value, arg);
+    LinkedHashMapNode* current = map->head;
+
+    while (current != NULL)
+    {
+        (*fptr)(current->key, current->key_size, current->value, arg);
+        current = current->next;
+    }
 }
 
 void linkedhashmap_free(LinkedHashMap* map)

@@ -61,6 +61,8 @@ LINKEDHASHMAP_TEST_EXPORT void linkedhashmap_resize_down(LinkedHashMap* map);
 
 LINKEDHASHMAP_EXPORT void* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size);
 
+LINKEDHASHMAP_EXPORT void* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index);
+
 LINKEDHASHMAP_EXPORT void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value);
 
 LINKEDHASHMAP_EXPORT void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2);
@@ -72,6 +74,8 @@ LINKEDHASHMAP_EXPORT void linkedhashmap_delete(LinkedHashMap* map, void* key, si
 LINKEDHASHMAP_EXPORT bool linkedhashmap_contains(LinkedHashMap* map, void* key, size_t key_size);
 
 LINKEDHASHMAP_EXPORT bool linkedhashmap_equal(LinkedHashMap* map1, LinkedHashMap* map2);
+
+LINKEDHASHMAP_EXPORT bool linkedhashmap_equal_with_insertion_order(LinkedHashMap* map1, LinkedHashMap* map2);
 
 LINKEDHASHMAP_EXPORT void linkedhashmap_clear(LinkedHashMap* map);
 
