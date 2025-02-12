@@ -419,6 +419,310 @@ void test_foreach(void)
     linkedhashmap_free(map);
 }
 
+// test order is preserved in keys
+void test_order_keys(void)
+{
+    int values[] = { 1, 2, 3, 4, 5 };
+
+    // int map
+    LinkedHashMap* int_map = linkedhashmap_new();
+
+    int int_keys[] = { 2, 7, 5, 1, 3 };
+    int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
+
+    for (int i = 0; i < int_array_len; i++)
+        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+
+    void** int_map_keys1 = linkedhashmap_keys(int_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_keys1[i]), int_keys[i]);
+
+    free(int_map_keys1);
+
+    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
+    void** int_map_keys2 = linkedhashmap_keys(int_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_keys2[i]), int_keys[i]);
+
+    free(int_map_keys2);
+    linkedhashmap_free(int_map);
+
+    // string map
+    LinkedHashMap* str_map = linkedhashmap_new();
+
+    char* str_keys[] = { "hello", "world", "foo", "bar", "baz" };
+    int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
+
+    for (int i = 0; i < str_array_len; i++)
+        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+
+    void** str_map_keys1 = linkedhashmap_keys(str_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_keys1[i]), str_keys[i]);
+
+    free(str_map_keys1);
+
+    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
+    void** str_map_keys2 = linkedhashmap_keys(str_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_keys2[i]), str_keys[i]);
+
+    free(str_map_keys2);
+    linkedhashmap_free(str_map);
+}
+
+// test order is preserved in values
+void test_order_values(void)
+{
+    int values[] = { 1, 2, 3, 4, 5 };
+
+    // int map
+    LinkedHashMap* int_map = linkedhashmap_new();
+
+    int int_keys[] = { 2, 7, 5, 1, 3 };
+    int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
+
+    for (int i = 0; i < int_array_len; i++)
+        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+
+    void** int_map_values1 = linkedhashmap_values(int_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_values1[i]), values[i]);
+
+    free(int_map_values1);
+
+    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
+    void** int_map_values2 = linkedhashmap_values(int_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
+        if (i != 2)
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_values2[i]), values[i])
+        else
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_values2[2]), values[1]);
+
+    free(int_map_values2);
+    linkedhashmap_free(int_map);
+
+    // string map
+    LinkedHashMap* str_map = linkedhashmap_new();
+
+    char* str_keys[] = { "hello", "world", "foo", "bar", "baz" };
+    int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
+
+    for (int i = 0; i < str_array_len; i++)
+        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+
+    void** str_map_values1 = linkedhashmap_values(str_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
+        TEST_ASSERT_INT_EQ(*(int*)(str_map_values1[i]), values[i]);
+
+    free(str_map_values1);
+
+    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
+    void** str_map_values2 = linkedhashmap_values(str_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
+        if (i != 2)
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_values2[i]), values[i])
+        else
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_values2[2]), values[1]);
+
+    free(str_map_values2);
+    linkedhashmap_free(str_map);
+}
+
+// test order is preserved in entries
+void test_order_entries(void)
+{
+    int values[] = { 1, 2, 3, 4, 5 };
+
+    // int map
+    LinkedHashMap* int_map = linkedhashmap_new();
+
+    int int_keys[] = { 2, 7, 5, 1, 3 };
+    int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
+
+    for (int i = 0; i < int_array_len; i++)
+        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+
+    void** int_map_entries1 = linkedhashmap_entries(int_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
+    {
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries1[2 * i]), int_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries1[2 * i + 1]), values[i]);
+    }
+
+    free(int_map_entries1);
+
+    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
+    void** int_map_entries2 = linkedhashmap_entries(int_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
+    {
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[2 * i]), int_keys[i]);
+
+        if (i != 2)
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[2 * i + 1]), values[i])
+        else
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[5]), values[1]);
+    }
+
+    free(int_map_entries2);
+    linkedhashmap_free(int_map);
+
+    // string map
+    LinkedHashMap* str_map = linkedhashmap_new();
+
+    char* str_keys[] = { "hello", "world", "foo", "bar", "baz" };
+    int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
+
+    for (int i = 0; i < str_array_len; i++)
+        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+
+    void** str_map_entries1 = linkedhashmap_entries(str_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
+    {
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_entries1[2 * i]), str_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(str_map_entries1[2 * i + 1]), values[i]);
+    }
+
+    free(str_map_entries1);
+
+    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
+    void** str_map_entries2 = linkedhashmap_entries(str_map);
+
+    for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
+    {
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_entries2[2 * i]), str_keys[i]);
+
+        if (i != 2)
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_entries2[2 * i + 1]), values[i])
+        else
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_entries2[5]), values[1]);
+    }
+
+    free(str_map_entries2);
+    linkedhashmap_free(str_map);
+}
+
+typedef struct _ForeachOrderState
+{
+    size_t index;
+    void* keys;
+    int* values;
+    bool modified_value;
+} ForeachOrderState;
+
+void verify_foreach_order_int(void* key, size_t key_size, void* value, void* arg)
+{
+    (void)key_size;
+
+    ForeachOrderState* state = (ForeachOrderState*)arg;
+
+    if (!state->modified_value)
+    {
+        TEST_ASSERT_INT_EQ(*(int*)key, ((int*)(state->keys))[state->index]);
+        TEST_ASSERT_INT_EQ(*(int*)value, state->values[state->index]);
+    }
+    else
+    {
+        TEST_ASSERT_INT_EQ(*(int*)key, ((int*)(state->keys))[state->index]);
+
+        if (state->index != 2)
+            TEST_ASSERT_INT_EQ(*(int*)value, state->values[state->index])
+        else
+            TEST_ASSERT_INT_EQ(*(int*)value, state->values[1]);
+    }
+
+    state->index += 1;
+}
+
+void verify_foreach_order_str(void* key, size_t key_size, void* value, void* arg)
+{
+    (void)key_size;
+
+    ForeachOrderState* state = (ForeachOrderState*)arg;
+
+    if (!state->modified_value)
+    {
+        TEST_ASSERT_STR_EQ(*(char**)key, ((char**)(state->keys))[state->index]);
+        TEST_ASSERT_INT_EQ(*(int*)value, state->values[state->index]);
+    }
+    else
+    {
+        TEST_ASSERT_STR_EQ(*(char**)key, ((char**)(state->keys))[state->index]);
+
+        if (state->index != 2)
+            TEST_ASSERT_INT_EQ(*(int*)value, state->values[state->index])
+        else
+            TEST_ASSERT_INT_EQ(*(int*)value, state->values[1]);
+    }
+
+    state->index += 1;
+}
+
+// test order is preserved in foreach
+void test_order_foreach(void)
+{
+    int values[] = { 1, 2, 3, 4, 5 };
+
+    // int map
+    LinkedHashMap* int_map = linkedhashmap_new();
+
+    int int_keys[] = { 2, 7, 5, 1, 3 };
+    int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
+
+    for (int i = 0; i < int_array_len; i++)
+        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+
+    ForeachOrderState foreach_order_state_int;
+    foreach_order_state_int.index = 0;
+    foreach_order_state_int.keys = int_keys;
+    foreach_order_state_int.values = values;
+    foreach_order_state_int.modified_value = false;
+
+    linkedhashmap_foreach(int_map, verify_foreach_order_int, &foreach_order_state_int);
+
+    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
+    foreach_order_state_int.index = 0;
+    foreach_order_state_int.modified_value = true;
+    linkedhashmap_foreach(int_map, verify_foreach_order_int, &foreach_order_state_int);
+
+    linkedhashmap_free(int_map);
+
+    // string map
+    LinkedHashMap* str_map = linkedhashmap_new();
+
+    char* str_keys[] = { "hello", "world", "foo", "bar", "baz" };
+    int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
+
+    for (int i = 0; i < str_array_len; i++)
+        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+
+    ForeachOrderState foreach_order_state_str;
+    foreach_order_state_str.index = 0;
+    foreach_order_state_str.keys = str_keys;
+    foreach_order_state_str.values = values;
+    foreach_order_state_str.modified_value = false;
+
+    linkedhashmap_foreach(str_map, verify_foreach_order_str, &foreach_order_state_str);
+
+    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
+    foreach_order_state_str.index = 0;
+    foreach_order_state_str.modified_value = true;
+    linkedhashmap_foreach(str_map, verify_foreach_order_str, &foreach_order_state_str);
+
+    linkedhashmap_free(str_map);
+}
+
 int main(void)
 {
     // Begin
@@ -451,6 +755,14 @@ int main(void)
     test_clear();
     printf("\nTesting foreach...\n");
     test_foreach();
+    printf("\nTesting that order is preserved in keys...\n");
+    test_order_keys();
+    printf("\nTesting that order is preserved in values...\n");
+    test_order_values();
+    printf("\nTesting that order is preserved in entries...\n");
+    test_order_entries();
+    printf("\nTesting that order is preserved in foreach...\n");
+    test_order_foreach();
 
     // Done
     printf("\nCompleted tests\n");
