@@ -178,6 +178,21 @@ void* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index)
     return current->value;
 }
 
+size_t linkedhashmap_get_index(LinkedHashMap* map, void* key, size_t key_size)
+{
+    LinkedHashMapNode* current = map->head;
+
+    for (size_t i = 0; current != NULL; i++)
+    {
+        if (linkedhashmap_keys_equal(current->key, current->key_size, key, key_size))
+            return i;
+
+        current = current->next;
+    }
+
+    return ~0;
+}
+
 void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value)
 {
     size_t hashvalue = linkedhashmap_hash(map, key, key_size);

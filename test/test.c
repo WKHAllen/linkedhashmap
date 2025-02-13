@@ -247,6 +247,25 @@ void test_get_by_index(void)
     linkedhashmap_free(map);
 }
 
+// test get index
+// { 0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81, 10: 100, 11: 121, 12: 144, 13: 169, 14: 196, 15: 225 }
+void test_get_index(void)
+{
+    LinkedHashMap* map = linkedhashmap_new();
+
+    int keys[] = { 2, 7, 5, 1, 3 };
+    int values[] = { 1, 2, 3, 4, 5 };
+    int array_len = sizeof(keys) / sizeof(keys[0]);
+
+    for (int i = 0; i < array_len; i++)
+        linkedhashmap_set(map, &(keys[i]), sizeof(keys[i]), &(values[i]));
+
+    for (int i = 0; i < array_len; i++)
+        TEST_ASSERT_EQ(linkedhashmap_get_index(map, &(keys[i]), sizeof(keys[i])), (size_t)i);
+
+    linkedhashmap_free(map);
+}
+
 // test resize_up
 // { 0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81, 10: 100, 11: 121, 12: 144, 13: 169, 14: 196, 15: 225, 16: 256 }
 void test_resize_up(void)
@@ -781,6 +800,8 @@ int main(void)
     test_get();
     printf("\nTesting get by index...\n");
     test_get_by_index();
+    printf("\nTesting get index...\n");
+    test_get_index();
     printf("\nTesting resize up...\n");
     test_resize_up();
     printf("\nTesting pop and resize down...\n");

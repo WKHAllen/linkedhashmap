@@ -63,6 +63,8 @@ LINKEDHASHMAP_EXPORT void* linkedhashmap_get(LinkedHashMap* map, void* key, size
 
 LINKEDHASHMAP_EXPORT void* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index);
 
+LINKEDHASHMAP_EXPORT size_t linkedhashmap_get_index(LinkedHashMap* map, void* key, size_t key_size);
+
 LINKEDHASHMAP_EXPORT void* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value);
 
 LINKEDHASHMAP_EXPORT void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2);
