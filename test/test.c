@@ -165,7 +165,7 @@ void sum_ints(void* key, size_t key_size, void* value, void* total)
         indices[i] = i; \
         squares[i] = i * i; \
         if (i < 16) \
-            linkedhashmap_set(map, &(indices[i]), sizeof(indices[i]), &(squares[i])); \
+            TEST_ASSERT(linkedhashmap_set(map, &(indices[i]), sizeof(indices[i]), &(squares[i])) == NULL); \
     } \
 
 // test initialization and deallocation
@@ -209,6 +209,10 @@ void test_set(void)
     TEST_ASSERT_EQ(map->length, (size_t)16);
     TEST_ASSERT_EQ(map->capacity, (size_t)16);
 
+    int mapvalue = 21;
+    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_set(map, &(indices[3]), sizeof(indices[3]), &mapvalue), squares[3]);
+    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_set(map, &(indices[3]), sizeof(indices[3]), &(squares[3])), mapvalue);
+
     linkedhashmap_free(map);
 }
 
@@ -220,6 +224,25 @@ void test_get(void)
 
     for (int i = 0; i < 16; i++)
         TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map, &(indices[i]), sizeof(indices[i])), squares[i]);
+
+    linkedhashmap_free(map);
+}
+
+// test get by index
+// { 0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81, 10: 100, 11: 121, 12: 144, 13: 169, 14: 196, 15: 225 }
+void test_get_by_index(void)
+{
+    LinkedHashMap* map = linkedhashmap_new();
+
+    int keys[] = { 2, 7, 5, 1, 3 };
+    int values[] = { 1, 2, 3, 4, 5 };
+    int array_len = sizeof(keys) / sizeof(keys[0]);
+
+    for (int i = 0; i < array_len; i++)
+        linkedhashmap_set(map, &(keys[i]), sizeof(keys[i]), &(values[i]));
+
+    for (int i = 0; i < array_len; i++)
+        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get_by_index(map, i), values[i]);
 
     linkedhashmap_free(map);
 }
@@ -261,7 +284,7 @@ void test_pop_resize_down(void)
     linkedhashmap_free(map);
 }
 
-// test copy and equal
+// test copy, equal, and equal with insertion order
 // { 0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36, 7: 49, 8: 64, 9: 81, 10: 100, 11: 121, 12: 144, 13: 169, 14: 196, 15: 225 }
 void test_copy_equal(void)
 {
@@ -273,8 +296,25 @@ void test_copy_equal(void)
         TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map2, &(indices[i]), sizeof(indices[i])), squares[i]);
 
     TEST_ASSERT(linkedhashmap_equal(map, map2));
+    TEST_ASSERT(linkedhashmap_equal_with_insertion_order(map, map2));
+
+    linkedhashmap_set(map2, &(indices[3]), sizeof(indices[3]), &(squares[3]));
+
+    TEST_ASSERT(linkedhashmap_equal_with_insertion_order(map, map2));
+
+    LinkedHashMap* map3 = linkedhashmap_new();
+
+    for (int i = 1; i < 16; i++)
+        linkedhashmap_set(map3, &(indices[i]), sizeof(indices[i]), &(squares[i]));
+
+    linkedhashmap_set(map3, &(indices[0]), sizeof(indices[0]), &(squares[0]));
+
+    TEST_ASSERT(linkedhashmap_equal(map, map3));
+    TEST_ASSERT(!linkedhashmap_equal_with_insertion_order(map, map3));
 
     linkedhashmap_free(map);
+    linkedhashmap_free(map2);
+    linkedhashmap_free(map3);
 }
 
 // test extend
@@ -287,8 +327,8 @@ void test_extend(void)
     int map3value1 = 21;
     int map3value2 = 37;
     LinkedHashMap* map3 = linkedhashmap_new();
-    linkedhashmap_set(map3, &(indices[3]), sizeof(map3value1), &(map3value1));
-    linkedhashmap_set(map3, &(indices[16]), sizeof(map3value2), &(map3value2));
+    linkedhashmap_set(map3, &(indices[3]), sizeof(indices[3]), &(map3value1));
+    linkedhashmap_set(map3, &(indices[16]), sizeof(indices[16]), &(map3value2));
     linkedhashmap_extend(map2, map3);
 
     TEST_ASSERT(!linkedhashmap_equal(map, map2));
@@ -299,6 +339,8 @@ void test_extend(void)
     TEST_ASSERT_EQ(linkedhashmap_length(map2), (size_t)17);
 
     linkedhashmap_free(map);
+    linkedhashmap_free(map2);
+    linkedhashmap_free(map3);
 }
 
 // test keys, values, and entries
@@ -737,11 +779,13 @@ int main(void)
     test_set();
     printf("\nTesting get...\n");
     test_get();
+    printf("\nTesting get by index...\n");
+    test_get_by_index();
     printf("\nTesting resize up...\n");
     test_resize_up();
     printf("\nTesting pop and resize down...\n");
     test_pop_resize_down();
-    printf("\nTesting copy and equal...\n");
+    printf("\nTesting copy, equal, and equal with insertion order...\n");
     test_copy_equal();
     printf("\nTesting extend...\n");
     test_extend();
