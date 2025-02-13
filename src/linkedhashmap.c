@@ -147,7 +147,7 @@ void linkedhashmap_resize_down(LinkedHashMap* map)
     linkedhashmap_resize(map, new_size);
 }
 
-LinkedHashMapValue* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size)
+LinkedHashMapEntry* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size)
 {
     size_t hashvalue = linkedhashmap_hash(map, key, key_size);
     size_t current;
@@ -159,7 +159,9 @@ LinkedHashMapValue* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_
         if (linkedhashmap_mem_equal(key, key_size, map->nodes[current].key, map->nodes[current].key_size)
             && map->nodes[current].is_allocated)
         {
-            LinkedHashMapValue* res = (LinkedHashMapValue*)malloc(sizeof(LinkedHashMapValue));
+            LinkedHashMapEntry* res = (LinkedHashMapEntry*)malloc(sizeof(LinkedHashMapEntry));
+            res->key = map->nodes[current].key;
+            res->key_size = map->nodes[current].key_size;
             res->value = map->nodes[current].value;
             res->value_size = map->nodes[current].value_size;
             return res;
@@ -169,7 +171,7 @@ LinkedHashMapValue* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_
     return NULL;
 }
 
-LinkedHashMapValue* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index)
+LinkedHashMapEntry* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index)
 {
     LinkedHashMapNode* current = map->head;
 
@@ -179,7 +181,9 @@ LinkedHashMapValue* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index)
     if (current == NULL)
         return NULL;
 
-    LinkedHashMapValue* res = (LinkedHashMapValue*)malloc(sizeof(LinkedHashMapValue));
+    LinkedHashMapEntry* res = (LinkedHashMapEntry*)malloc(sizeof(LinkedHashMapEntry));
+    res->key = current->key;
+    res->key_size = current->key_size;
     res->value = current->value;
     res->value_size = current->value_size;
     return res;
@@ -200,7 +204,7 @@ size_t linkedhashmap_get_index(LinkedHashMap* map, void* key, size_t key_size)
     return ~0;
 }
 
-LinkedHashMapValue* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value, size_t value_size)
+LinkedHashMapEntry* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value, size_t value_size)
 {
     size_t hashvalue = linkedhashmap_hash(map, key, key_size);
     size_t current;
@@ -234,7 +238,9 @@ LinkedHashMapValue* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_
         }
         else if (linkedhashmap_mem_equal(key, key_size, map->nodes[current].key, map->nodes[current].key_size))
         {
-            LinkedHashMapValue* res = (LinkedHashMapValue*)malloc(sizeof(LinkedHashMapValue));
+            LinkedHashMapEntry* res = (LinkedHashMapEntry*)malloc(sizeof(LinkedHashMapEntry));
+            res->key = map->nodes[current].key;
+            res->key_size = map->nodes[current].key_size;
             res->value = map->nodes[current].value;
             res->value_size = map->nodes[current].value_size;
 
@@ -254,7 +260,7 @@ void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2)
 
     while (current != NULL)
     {
-        LinkedHashMapValue* res = linkedhashmap_set(map1, current->key, current->key_size, current->value, current->value_size);
+        LinkedHashMapEntry* res = linkedhashmap_set(map1, current->key, current->key_size, current->value, current->value_size);
 
         if (res != NULL)
             free(res);
@@ -263,7 +269,7 @@ void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2)
     }
 }
 
-LinkedHashMapValue* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_size)
+LinkedHashMapEntry* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_size)
 {
     size_t hashvalue = linkedhashmap_hash(map, key, key_size);
     size_t current;
@@ -275,7 +281,9 @@ LinkedHashMapValue* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_
         if (linkedhashmap_mem_equal(key, key_size, map->nodes[current].key, map->nodes[current].key_size)
             && map->nodes[current].is_allocated)
         {
-            LinkedHashMapValue* res = (LinkedHashMapValue*)malloc(sizeof(LinkedHashMapValue));
+            LinkedHashMapEntry* res = (LinkedHashMapEntry*)malloc(sizeof(LinkedHashMapEntry));
+            res->key = map->nodes[current].key;
+            res->key_size = map->nodes[current].key_size;
             res->value = map->nodes[current].value;
             res->value_size = map->nodes[current].value_size;
 
@@ -304,7 +312,7 @@ LinkedHashMapValue* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_
 
 void linkedhashmap_delete(LinkedHashMap* map, void* key, size_t key_size)
 {
-    LinkedHashMapValue* res = linkedhashmap_pop(map, key, key_size);
+    LinkedHashMapEntry* res = linkedhashmap_pop(map, key, key_size);
 
     if (res != NULL)
         free(res);
@@ -336,7 +344,7 @@ bool linkedhashmap_equal(LinkedHashMap* map1, LinkedHashMap* map2)
     {
         if (map1->nodes[i].is_allocated)
         {
-            LinkedHashMapValue* res = linkedhashmap_get(map2, map1->nodes[i].key, map1->nodes[i].key_size);
+            LinkedHashMapEntry* res = linkedhashmap_get(map2, map1->nodes[i].key, map1->nodes[i].key_size);
 
             if (res != NULL && !linkedhashmap_mem_equal(map1->nodes[i].value, map1->nodes[i].value_size, res->value, res->value_size))
             {

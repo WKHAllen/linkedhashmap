@@ -82,17 +82,17 @@ LINKEDHASHMAP_TEST_EXPORT void linkedhashmap_resize_up(LinkedHashMap* map);
 
 LINKEDHASHMAP_TEST_EXPORT void linkedhashmap_resize_down(LinkedHashMap* map);
 
-LINKEDHASHMAP_EXPORT LinkedHashMapValue* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size);
+LINKEDHASHMAP_EXPORT LinkedHashMapEntry* linkedhashmap_get(LinkedHashMap* map, void* key, size_t key_size);
 
-LINKEDHASHMAP_EXPORT LinkedHashMapValue* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index);
+LINKEDHASHMAP_EXPORT LinkedHashMapEntry* linkedhashmap_get_by_index(LinkedHashMap* map, size_t index);
 
 LINKEDHASHMAP_EXPORT size_t linkedhashmap_get_index(LinkedHashMap* map, void* key, size_t key_size);
 
-LINKEDHASHMAP_EXPORT LinkedHashMapValue* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value, size_t value_size);
+LINKEDHASHMAP_EXPORT LinkedHashMapEntry* linkedhashmap_set(LinkedHashMap* map, void* key, size_t key_size, void* value, size_t value_size);
 
 LINKEDHASHMAP_EXPORT void linkedhashmap_extend(LinkedHashMap* map1, LinkedHashMap* map2);
 
-LINKEDHASHMAP_EXPORT LinkedHashMapValue* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_size);
+LINKEDHASHMAP_EXPORT LinkedHashMapEntry* linkedhashmap_pop(LinkedHashMap* map, void* key, size_t key_size);
 
 LINKEDHASHMAP_EXPORT void linkedhashmap_delete(LinkedHashMap* map, void* key, size_t key_size);
 
