@@ -165,7 +165,7 @@ void sum_ints(void* key, size_t key_size, void* value, void* total)
         indices[i] = i; \
         squares[i] = i * i; \
         if (i < 16) \
-            TEST_ASSERT(linkedhashmap_set(map, &(indices[i]), sizeof(indices[i]), &(squares[i])) == NULL); \
+            TEST_ASSERT(linkedhashmap_set(map, &(indices[i]), sizeof(indices[i]), &(squares[i]), sizeof(squares[i])) == NULL); \
     } \
 
 // test initialization and deallocation
@@ -210,9 +210,14 @@ void test_set(void)
     TEST_ASSERT_EQ(map->capacity, (size_t)16);
 
     int mapvalue = 21;
-    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_set(map, &(indices[3]), sizeof(indices[3]), &mapvalue), squares[3]);
-    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_set(map, &(indices[3]), sizeof(indices[3]), &(squares[3])), mapvalue);
+    LinkedHashMapValue* res1 = linkedhashmap_set(map, &(indices[3]), sizeof(indices[3]), &mapvalue, sizeof(mapvalue));
+    LinkedHashMapValue* res2 = linkedhashmap_set(map, &(indices[3]), sizeof(indices[3]), &(squares[3]), sizeof(squares[3]));
 
+    TEST_ASSERT_INT_EQ(*(int*)(res1->value), squares[3]);
+    TEST_ASSERT_INT_EQ(*(int*)(res2->value), mapvalue);
+
+    free(res1);
+    free(res2);
     linkedhashmap_free(map);
 }
 
@@ -223,7 +228,11 @@ void test_get(void)
     INIT_SQUARES();
 
     for (int i = 0; i < 16; i++)
-        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map, &(indices[i]), sizeof(indices[i])), squares[i]);
+    {
+        LinkedHashMapValue* res = linkedhashmap_get(map, &(indices[i]), sizeof(indices[i]));
+        TEST_ASSERT_INT_EQ(*(int*)(res->value), squares[i]);
+        free(res);
+    }
 
     linkedhashmap_free(map);
 }
@@ -239,10 +248,14 @@ void test_get_by_index(void)
     int array_len = sizeof(keys) / sizeof(keys[0]);
 
     for (int i = 0; i < array_len; i++)
-        linkedhashmap_set(map, &(keys[i]), sizeof(keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(map, &(keys[i]), sizeof(keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
     for (int i = 0; i < array_len; i++)
-        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get_by_index(map, i), values[i]);
+    {
+        LinkedHashMapValue* res = linkedhashmap_get_by_index(map, i);
+        TEST_ASSERT_INT_EQ(*(int*)(res->value), values[i]);
+        free(res);
+    }
 
     linkedhashmap_free(map);
 }
@@ -258,7 +271,7 @@ void test_get_index(void)
     int array_len = sizeof(keys) / sizeof(keys[0]);
 
     for (int i = 0; i < array_len; i++)
-        linkedhashmap_set(map, &(keys[i]), sizeof(keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(map, &(keys[i]), sizeof(keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
     for (int i = 0; i < array_len; i++)
         TEST_ASSERT_EQ(linkedhashmap_get_index(map, &(keys[i]), sizeof(keys[i])), (size_t)i);
@@ -272,14 +285,18 @@ void test_resize_up(void)
 {
     INIT_SQUARES();
 
-    linkedhashmap_set(map, &(indices[16]), sizeof(indices[16]), &(squares[16]));
+    TEST_ASSERT(linkedhashmap_set(map, &(indices[16]), sizeof(indices[16]), &(squares[16]), sizeof(squares[16])) == NULL);
 
     TEST_ASSERT_EQ(linkedhashmap_length(map), (size_t)17);
     TEST_ASSERT_EQ(map->length, (size_t)17);
     TEST_ASSERT_EQ(map->capacity, (size_t)32);
 
     for (int i = 0; i < 17; i++)
-        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map, &(indices[i]), sizeof(indices[i])), squares[i]);
+    {
+        LinkedHashMapValue* res = linkedhashmap_get(map, &(indices[i]), sizeof(indices[i]));
+        TEST_ASSERT_INT_EQ(*(int*)(res->value), squares[i]);
+        free(res);
+    }
 
     linkedhashmap_free(map);
 }
@@ -290,15 +307,23 @@ void test_pop_resize_down(void)
 {
     INIT_SQUARES();
 
-    linkedhashmap_set(map, &(indices[16]), sizeof(indices[16]), &(squares[16]));
+    TEST_ASSERT(linkedhashmap_set(map, &(indices[16]), sizeof(indices[16]), &(squares[16]), sizeof(squares[16])) == NULL);
 
-    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_pop(map, &(indices[16]), sizeof(indices[16])), squares[16]);
+    LinkedHashMapValue* res1 = linkedhashmap_pop(map, &(indices[16]), sizeof(indices[16]));
+
+    TEST_ASSERT_INT_EQ(*(int*)(res1->value), squares[16]);
     TEST_ASSERT_EQ(linkedhashmap_length(map), (size_t)16);
     TEST_ASSERT_EQ(map->length, (size_t)16);
     TEST_ASSERT_EQ(map->capacity, (size_t)16);
 
+    free(res1);
+
     for (int i = 0; i < 16; i++)
-        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map, &(indices[i]), sizeof(indices[i])), squares[i]);
+    {
+        LinkedHashMapValue* res2 = linkedhashmap_get(map, &(indices[i]), sizeof(indices[i]));
+        TEST_ASSERT_INT_EQ(*(int*)(res2->value), squares[i]);
+        free(res2);
+    }
 
     linkedhashmap_free(map);
 }
@@ -312,21 +337,26 @@ void test_copy_equal(void)
     LinkedHashMap* map2 = linkedhashmap_copy(map);
 
     for (int i = 0; i < 16; i++)
-        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map2, &(indices[i]), sizeof(indices[i])), squares[i]);
+    {
+        LinkedHashMapValue* res = linkedhashmap_get(map2, &(indices[i]), sizeof(indices[i]));
+        TEST_ASSERT_INT_EQ(*(int*)(res->value), squares[i]);
+        free(res);
+    }
 
     TEST_ASSERT(linkedhashmap_equal(map, map2));
     TEST_ASSERT(linkedhashmap_equal_with_insertion_order(map, map2));
 
-    linkedhashmap_set(map2, &(indices[3]), sizeof(indices[3]), &(squares[3]));
+    LinkedHashMapValue* res = linkedhashmap_set(map2, &(indices[3]), sizeof(indices[3]), &(squares[3]), sizeof(squares[3]));
+    free(res);
 
     TEST_ASSERT(linkedhashmap_equal_with_insertion_order(map, map2));
 
     LinkedHashMap* map3 = linkedhashmap_new();
 
     for (int i = 1; i < 16; i++)
-        linkedhashmap_set(map3, &(indices[i]), sizeof(indices[i]), &(squares[i]));
+        TEST_ASSERT(linkedhashmap_set(map3, &(indices[i]), sizeof(indices[i]), &(squares[i]), sizeof(squares[i])) == NULL);
 
-    linkedhashmap_set(map3, &(indices[0]), sizeof(indices[0]), &(squares[0]));
+    TEST_ASSERT(linkedhashmap_set(map3, &(indices[0]), sizeof(indices[0]), &(squares[0]), sizeof(squares[0])) == NULL);
 
     TEST_ASSERT(linkedhashmap_equal(map, map3));
     TEST_ASSERT(!linkedhashmap_equal_with_insertion_order(map, map3));
@@ -346,17 +376,23 @@ void test_extend(void)
     int map3value1 = 21;
     int map3value2 = 37;
     LinkedHashMap* map3 = linkedhashmap_new();
-    linkedhashmap_set(map3, &(indices[3]), sizeof(indices[3]), &(map3value1));
-    linkedhashmap_set(map3, &(indices[16]), sizeof(indices[16]), &(map3value2));
+    LinkedHashMapValue* res1 = linkedhashmap_set(map3, &(indices[3]), sizeof(indices[3]), &(map3value1), sizeof(map3value1));
+    LinkedHashMapValue* res2 = linkedhashmap_set(map3, &(indices[16]), sizeof(indices[16]), &(map3value2), sizeof(map3value2));
     linkedhashmap_extend(map2, map3);
+    LinkedHashMapValue* res3 = linkedhashmap_get(map2, &(indices[3]), sizeof(indices[3]));
+    LinkedHashMapValue* res4 = linkedhashmap_get(map2, &(indices[16]), sizeof(indices[16]));
 
     TEST_ASSERT(!linkedhashmap_equal(map, map2));
     TEST_ASSERT(!linkedhashmap_equal(map, map3));
     TEST_ASSERT(!linkedhashmap_equal(map2, map3));
-    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map2, &(indices[3]), sizeof(indices[3])), map3value1);
-    TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map2, &(indices[16]), sizeof(indices[16])), map3value2);
+    TEST_ASSERT_INT_EQ(*(int*)(res3->value), map3value1);
+    TEST_ASSERT_INT_EQ(*(int*)(res4->value), map3value2);
     TEST_ASSERT_EQ(linkedhashmap_length(map2), (size_t)17);
 
+    free(res1);
+    free(res2);
+    free(res3);
+    free(res4);
     linkedhashmap_free(map);
     linkedhashmap_free(map2);
     linkedhashmap_free(map3);
@@ -378,16 +414,16 @@ void test_keys_values_entries(void)
         squares[i] = i * i;
     }
 
-    void** map_keys = linkedhashmap_keys(map);
-    void** map_values = linkedhashmap_values(map);
-    void** map_entries = linkedhashmap_entries(map);
+    LinkedHashMapKey* map_keys = linkedhashmap_keys(map);
+    LinkedHashMapValue* map_values = linkedhashmap_values(map);
+    LinkedHashMapEntry* map_entries = linkedhashmap_entries(map);
 
     for (size_t i = 0; i < linkedhashmap_length(map); i++)
     {
-        key_total += *(int*)(map_keys[i]);
-        value_total += *(int*)(map_values[i]);
-        entries_total += *(int*)(map_entries[2 * i]);
-        entries_total += *(int*)(map_entries[2 * i + 1]);
+        key_total += *(int*)(map_keys[i].key);
+        value_total += *(int*)(map_values[i].value);
+        entries_total += *(int*)(map_entries[i].key);
+        entries_total += *(int*)(map_entries[i].value);
     }
 
     TEST_ASSERT_INT_EQ(key_total, 120);
@@ -407,7 +443,7 @@ void test_delete(void)
 {
     INIT_SQUARES();
 
-    linkedhashmap_set(map, &(indices[16]), sizeof(indices[16]), &(squares[16]));
+    TEST_ASSERT(linkedhashmap_set(map, &(indices[16]), sizeof(indices[16]), &(squares[16]), sizeof(squares[16])) == NULL);
 
     TEST_ASSERT_EQ(linkedhashmap_length(map), (size_t)17);
     TEST_ASSERT_EQ(map->length, (size_t)17);
@@ -420,7 +456,11 @@ void test_delete(void)
     TEST_ASSERT_EQ(map->capacity, (size_t)16);
 
     for (int i = 0; i < 16; i++)
-        TEST_ASSERT_INT_EQ(*(int*)linkedhashmap_get(map, &(indices[i]), sizeof(indices[i])), squares[i]);
+    {
+        LinkedHashMapValue* res = linkedhashmap_get(map, &(indices[i]), sizeof(indices[i]));
+        TEST_ASSERT_INT_EQ(*(int*)(res->value), squares[i]);
+        free(res);
+    }
 
     linkedhashmap_free(map);
 }
@@ -468,7 +508,7 @@ void test_foreach(void)
 
     for (int i = 0; i < arraylen; i++)
     {
-        linkedhashmap_set(map, &(indices[i]), sizeof(indices[i]), &(intvals[i]));
+        TEST_ASSERT(linkedhashmap_set(map, &(indices[i]), sizeof(indices[i]), &(intvals[i]), sizeof(intvals[i])) == NULL);
         expected += intvals[i];
     }
 
@@ -492,20 +532,20 @@ void test_order_keys(void)
     int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
 
     for (int i = 0; i < int_array_len; i++)
-        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
-    void** int_map_keys1 = linkedhashmap_keys(int_map);
+    LinkedHashMapKey* int_map_keys1 = linkedhashmap_keys(int_map);
 
     for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
-        TEST_ASSERT_INT_EQ(*(int*)(int_map_keys1[i]), int_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_keys1[i].key), int_keys[i]);
 
     free(int_map_keys1);
 
-    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
-    void** int_map_keys2 = linkedhashmap_keys(int_map);
+    free(linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]), sizeof(values[1])));
+    LinkedHashMapKey* int_map_keys2 = linkedhashmap_keys(int_map);
 
     for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
-        TEST_ASSERT_INT_EQ(*(int*)(int_map_keys2[i]), int_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_keys2[i].key), int_keys[i]);
 
     free(int_map_keys2);
     linkedhashmap_free(int_map);
@@ -517,20 +557,20 @@ void test_order_keys(void)
     int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
 
     for (int i = 0; i < str_array_len; i++)
-        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
-    void** str_map_keys1 = linkedhashmap_keys(str_map);
+    LinkedHashMapKey* str_map_keys1 = linkedhashmap_keys(str_map);
 
     for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
-        TEST_ASSERT_STR_EQ(*(char**)(str_map_keys1[i]), str_keys[i]);
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_keys1[i].key), str_keys[i]);
 
     free(str_map_keys1);
 
-    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
-    void** str_map_keys2 = linkedhashmap_keys(str_map);
+    free(linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]), sizeof(values[1])));
+    LinkedHashMapKey* str_map_keys2 = linkedhashmap_keys(str_map);
 
     for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
-        TEST_ASSERT_STR_EQ(*(char**)(str_map_keys2[i]), str_keys[i]);
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_keys2[i].key), str_keys[i]);
 
     free(str_map_keys2);
     linkedhashmap_free(str_map);
@@ -548,23 +588,23 @@ void test_order_values(void)
     int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
 
     for (int i = 0; i < int_array_len; i++)
-        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
-    void** int_map_values1 = linkedhashmap_values(int_map);
+    LinkedHashMapValue* int_map_values1 = linkedhashmap_values(int_map);
 
     for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
-        TEST_ASSERT_INT_EQ(*(int*)(int_map_values1[i]), values[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_values1[i].value), values[i]);
 
     free(int_map_values1);
 
-    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
-    void** int_map_values2 = linkedhashmap_values(int_map);
+    free(linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]), sizeof(values[1])));
+    LinkedHashMapValue* int_map_values2 = linkedhashmap_values(int_map);
 
     for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
         if (i != 2)
-            TEST_ASSERT_INT_EQ(*(int*)(int_map_values2[i]), values[i])
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_values2[i].value), values[i])
         else
-            TEST_ASSERT_INT_EQ(*(int*)(int_map_values2[2]), values[1]);
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_values2[2].value), values[1]);
 
     free(int_map_values2);
     linkedhashmap_free(int_map);
@@ -576,23 +616,23 @@ void test_order_values(void)
     int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
 
     for (int i = 0; i < str_array_len; i++)
-        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
-    void** str_map_values1 = linkedhashmap_values(str_map);
+    LinkedHashMapValue* str_map_values1 = linkedhashmap_values(str_map);
 
     for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
-        TEST_ASSERT_INT_EQ(*(int*)(str_map_values1[i]), values[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(str_map_values1[i].value), values[i]);
 
     free(str_map_values1);
 
-    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
-    void** str_map_values2 = linkedhashmap_values(str_map);
+    free(linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]), sizeof(values[1])));
+    LinkedHashMapValue* str_map_values2 = linkedhashmap_values(str_map);
 
     for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
         if (i != 2)
-            TEST_ASSERT_INT_EQ(*(int*)(str_map_values2[i]), values[i])
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_values2[i].value), values[i])
         else
-            TEST_ASSERT_INT_EQ(*(int*)(str_map_values2[2]), values[1]);
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_values2[2].value), values[1]);
 
     free(str_map_values2);
     linkedhashmap_free(str_map);
@@ -610,29 +650,29 @@ void test_order_entries(void)
     int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
 
     for (int i = 0; i < int_array_len; i++)
-        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
-    void** int_map_entries1 = linkedhashmap_entries(int_map);
+    LinkedHashMapEntry* int_map_entries1 = linkedhashmap_entries(int_map);
 
     for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
     {
-        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries1[2 * i]), int_keys[i]);
-        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries1[2 * i + 1]), values[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries1[i].key), int_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries1[i].value), values[i]);
     }
 
     free(int_map_entries1);
 
-    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
-    void** int_map_entries2 = linkedhashmap_entries(int_map);
+    free(linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]), sizeof(values[1])));
+    LinkedHashMapEntry* int_map_entries2 = linkedhashmap_entries(int_map);
 
     for (size_t i = 0; i < linkedhashmap_length(int_map); i++)
     {
-        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[2 * i]), int_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[i].key), int_keys[i]);
 
         if (i != 2)
-            TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[2 * i + 1]), values[i])
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[i].value), values[i])
         else
-            TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[5]), values[1]);
+            TEST_ASSERT_INT_EQ(*(int*)(int_map_entries2[2].value), values[1]);
     }
 
     free(int_map_entries2);
@@ -645,29 +685,29 @@ void test_order_entries(void)
     int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
 
     for (int i = 0; i < str_array_len; i++)
-        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
-    void** str_map_entries1 = linkedhashmap_entries(str_map);
+    LinkedHashMapEntry* str_map_entries1 = linkedhashmap_entries(str_map);
 
     for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
     {
-        TEST_ASSERT_STR_EQ(*(char**)(str_map_entries1[2 * i]), str_keys[i]);
-        TEST_ASSERT_INT_EQ(*(int*)(str_map_entries1[2 * i + 1]), values[i]);
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_entries1[i].key), str_keys[i]);
+        TEST_ASSERT_INT_EQ(*(int*)(str_map_entries1[i].value), values[i]);
     }
 
     free(str_map_entries1);
 
-    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
-    void** str_map_entries2 = linkedhashmap_entries(str_map);
+    free(linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]), sizeof(values[1])));
+    LinkedHashMapEntry* str_map_entries2 = linkedhashmap_entries(str_map);
 
     for (size_t i = 0; i < linkedhashmap_length(str_map); i++)
     {
-        TEST_ASSERT_STR_EQ(*(char**)(str_map_entries2[2 * i]), str_keys[i]);
+        TEST_ASSERT_STR_EQ(*(char**)(str_map_entries2[i].key), str_keys[i]);
 
         if (i != 2)
-            TEST_ASSERT_INT_EQ(*(int*)(str_map_entries2[2 * i + 1]), values[i])
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_entries2[i].value), values[i])
         else
-            TEST_ASSERT_INT_EQ(*(int*)(str_map_entries2[5]), values[1]);
+            TEST_ASSERT_INT_EQ(*(int*)(str_map_entries2[2].value), values[1]);
     }
 
     free(str_map_entries2);
@@ -742,7 +782,7 @@ void test_order_foreach(void)
     int int_array_len = sizeof(int_keys) / sizeof(int_keys[0]);
 
     for (int i = 0; i < int_array_len; i++)
-        linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(int_map, &(int_keys[i]), sizeof(int_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
     ForeachOrderState foreach_order_state_int;
     foreach_order_state_int.index = 0;
@@ -752,7 +792,7 @@ void test_order_foreach(void)
 
     linkedhashmap_foreach(int_map, verify_foreach_order_int, &foreach_order_state_int);
 
-    linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]));
+    free(linkedhashmap_set(int_map, &(int_keys[2]), sizeof(int_keys[2]), &(values[1]), sizeof(values[1])));
     foreach_order_state_int.index = 0;
     foreach_order_state_int.modified_value = true;
     linkedhashmap_foreach(int_map, verify_foreach_order_int, &foreach_order_state_int);
@@ -766,7 +806,7 @@ void test_order_foreach(void)
     int str_array_len = sizeof(str_keys) / sizeof(str_keys[0]);
 
     for (int i = 0; i < str_array_len; i++)
-        linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]));
+        TEST_ASSERT(linkedhashmap_set(str_map, &(str_keys[i]), sizeof(str_keys[i]), &(values[i]), sizeof(values[i])) == NULL);
 
     ForeachOrderState foreach_order_state_str;
     foreach_order_state_str.index = 0;
@@ -776,7 +816,7 @@ void test_order_foreach(void)
 
     linkedhashmap_foreach(str_map, verify_foreach_order_str, &foreach_order_state_str);
 
-    linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]));
+    free(linkedhashmap_set(str_map, &(str_keys[2]), sizeof(str_keys[2]), &(values[1]), sizeof(values[1])));
     foreach_order_state_str.index = 0;
     foreach_order_state_str.modified_value = true;
     linkedhashmap_foreach(str_map, verify_foreach_order_str, &foreach_order_state_str);
