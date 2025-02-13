@@ -5,10 +5,15 @@
 
 LinkedHashMap* linkedhashmap_new(void)
 {
+    return linkedhashmap_new_with_capacity(LINKEDHASHMAP_MIN_SIZE);
+}
+
+LinkedHashMap* linkedhashmap_new_with_capacity(size_t capacity)
+{
     LinkedHashMap* map = (LinkedHashMap*)malloc(sizeof(LinkedHashMap));
     map->length = 0;
-    map->capacity = LINKEDHASHMAP_MIN_SIZE;
-    map->nodes = (LinkedHashMapNode*)malloc(LINKEDHASHMAP_MIN_SIZE * sizeof(LinkedHashMapNode));
+    map->capacity = capacity;
+    map->nodes = (LinkedHashMapNode*)malloc(capacity * sizeof(LinkedHashMapNode));
     map->head = NULL;
     map->tail = NULL;
 

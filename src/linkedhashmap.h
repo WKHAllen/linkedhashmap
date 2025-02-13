@@ -60,6 +60,8 @@ typedef struct _LinkedHashMap
 
 LINKEDHASHMAP_EXPORT LinkedHashMap* linkedhashmap_new(void);
 
+LINKEDHASHMAP_EXPORT LinkedHashMap* linkedhashmap_new_with_capacity(size_t capacity);
+
 LINKEDHASHMAP_TEST_EXPORT size_t linkedhashmap_hash(LinkedHashMap* map, void* key, size_t key_size);
 
 LINKEDHASHMAP_TEST_EXPORT bool linkedhashmap_mem_equal(void* p1, size_t size1, void* p2, size_t size2);

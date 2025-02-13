@@ -182,6 +182,20 @@ void test_init(void)
     linkedhashmap_free(map);
 }
 
+// test initialization and deallocation
+// { }
+void test_init_with_capacity(void)
+{
+    LinkedHashMap* map = linkedhashmap_new_with_capacity(100);
+
+    TEST_ASSERT_EQ(linkedhashmap_length(map), (size_t)0);
+    TEST_ASSERT(linkedhashmap_is_empty(map));
+    TEST_ASSERT_EQ(map->length, (size_t)0);
+    TEST_ASSERT_EQ(map->capacity, (size_t)100);
+
+    linkedhashmap_free(map);
+}
+
 // test hash function
 void test_hash(void)
 {
@@ -832,6 +846,8 @@ int main(void)
     // Run tests
     printf("\nTesting initialization...\n");
     test_init();
+    printf("\nTesting initialization with capacity...\n");
+    test_init_with_capacity();
     printf("\nTesting hash function...\n");
     test_hash();
     printf("\nTesting set...\n");
