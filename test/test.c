@@ -129,9 +129,10 @@
     } \
 }
 
-void print_linkedhashmap_int(void* key, size_t key_size, void* value, void* arg)
+void print_linkedhashmap_int(void* key, size_t key_size, void* value, size_t value_size, void* arg)
 {
     (void)key_size;
+    (void)value_size;
     (void)arg;
 
     printf("%d: %d, ", *(int*)key, *(int*)value);
@@ -148,10 +149,11 @@ void print_linkedhashmap(LinkedHashMap* map)
         printf("\b\b }\n");
 }
 
-void sum_ints(void* key, size_t key_size, void* value, void* total)
+void sum_ints(void* key, size_t key_size, void* value, size_t value_size, void* total)
 {
     (void)key;
     (void)key_size;
+    (void)value_size;
 
     *(int*)total += *(int*)value;
 }
@@ -736,9 +738,10 @@ typedef struct _ForeachOrderState
     bool modified_value;
 } ForeachOrderState;
 
-void verify_foreach_order_int(void* key, size_t key_size, void* value, void* arg)
+void verify_foreach_order_int(void* key, size_t key_size, void* value, size_t value_size, void* arg)
 {
     (void)key_size;
+    (void)value_size;
 
     ForeachOrderState* state = (ForeachOrderState*)arg;
 
@@ -760,9 +763,10 @@ void verify_foreach_order_int(void* key, size_t key_size, void* value, void* arg
     state->index += 1;
 }
 
-void verify_foreach_order_str(void* key, size_t key_size, void* value, void* arg)
+void verify_foreach_order_str(void* key, size_t key_size, void* value, size_t value_size, void* arg)
 {
     (void)key_size;
+    (void)value_size;
 
     ForeachOrderState* state = (ForeachOrderState*)arg;
 

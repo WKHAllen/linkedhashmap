@@ -10,6 +10,9 @@ LinkedHashMap* linkedhashmap_new(void)
 
 LinkedHashMap* linkedhashmap_new_with_capacity(size_t capacity)
 {
+    if (capacity < LINKEDHASHMAP_MIN_SIZE)
+        capacity = LINKEDHASHMAP_MIN_SIZE;
+
     LinkedHashMap* map = (LinkedHashMap*)malloc(sizeof(LinkedHashMap));
     map->length = 0;
     map->capacity = capacity;
@@ -405,13 +408,13 @@ LinkedHashMap* linkedhashmap_copy(LinkedHashMap* map)
     return new_map;
 }
 
-void linkedhashmap_foreach(LinkedHashMap* map, void (*fptr)(void*, size_t, void*, void*), void* arg)
+void linkedhashmap_foreach(LinkedHashMap* map, void (*fn)(void*, size_t, void*, size_t, void*), void* arg)
 {
     LinkedHashMapNode* current = map->head;
 
     while (current != NULL)
     {
-        (*fptr)(current->key, current->key_size, current->value, arg);
+        (*fn)(current->key, current->key_size, current->value, current->value_size, arg);
         current = current->next;
     }
 }
