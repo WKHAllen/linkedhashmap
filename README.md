@@ -1,3 +1,3 @@
 # C Linked Hashmap
 
-A linked hashmap implementation for the C programming language.
+A C implementation of a hash map that remembers insertion order.
