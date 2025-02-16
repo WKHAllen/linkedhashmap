@@ -87,6 +87,13 @@ LINKEDHASHMAP_TEST_EXPORT size_t linkedhashmap_hash(LinkedHashMap* map, void* ke
 /// @return `true` if the memory regions contain identical data.
 LINKEDHASHMAP_TEST_EXPORT bool linkedhashmap_mem_equal(void* p1, size_t size1, void* p2, size_t size2);
 
+/// @brief Locates the index within the allocated block where a given key resides. This is only intended to be used internally.
+/// @param map The linked hashmap.
+/// @param key The key to locate.
+/// @param key_size The size of the key in bytes.
+/// @return The index of the given key. Returns `~0` if the key does not exist.
+LINKEDHASHMAP_TEST_EXPORT size_t linkedhashmap_find_key(LinkedHashMap* map, void* key, size_t key_size);
+
 /// @brief Returns the number of items currently stored in the linked hashmap.
 /// @param map The linked hashmap.
 /// @return The number of items.

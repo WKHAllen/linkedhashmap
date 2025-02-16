@@ -235,6 +235,45 @@ void test_set(void)
     free(res1);
     free(res2);
     linkedhashmap_free(map);
+
+    LinkedHashMap* map2 = linkedhashmap_new();
+
+    int key1 = 5;
+    int value1 = 1;
+    int key2 = 21;
+    int value2 = 2;
+    int value3 = 3;
+
+    LinkedHashMapEntry* res3 = linkedhashmap_set(map2, &key1, sizeof(key1), &value1, sizeof(value1));
+
+    TEST_ASSERT_EQ(map2->length, (size_t)1);
+    TEST_ASSERT_EQ(map2->capacity, (size_t)16);
+    TEST_ASSERT(res3 == NULL);
+
+    LinkedHashMapEntry* res4 = linkedhashmap_set(map2, &key2, sizeof(key2), &value2, sizeof(value2));
+
+    TEST_ASSERT_EQ(map2->length, (size_t)2);
+    TEST_ASSERT_EQ(map2->capacity, (size_t)16);
+    TEST_ASSERT(res4 == NULL);
+
+    linkedhashmap_delete(map2, &key1, sizeof(key1));
+
+    TEST_ASSERT_EQ(map2->length, (size_t)1);
+    TEST_ASSERT_EQ(map2->capacity, (size_t)16);
+
+    LinkedHashMapEntry* res5 = linkedhashmap_set(map2, &key2, sizeof(key2), &value3, sizeof(value3));
+
+    TEST_ASSERT_EQ(map2->length, (size_t)1);
+    TEST_ASSERT_EQ(map2->capacity, (size_t)16);
+    TEST_ASSERT_INT_EQ(*(int*)(res5->key), key2);
+    TEST_ASSERT_INT_EQ(*(int*)(res5->value), value2);
+
+    LinkedHashMapEntry* res6 = linkedhashmap_get(map, &key2, sizeof(value3));
+    TEST_ASSERT_INT_EQ(*(int*)(res6->value), value3);
+
+    free(res5);
+    free(res6);
+    linkedhashmap_free(map2);
 }
 
 // test get
@@ -507,6 +546,8 @@ void test_clear(void)
     TEST_ASSERT(linkedhashmap_is_empty(map));
     TEST_ASSERT_EQ(map->length, (size_t)0);
     TEST_ASSERT_EQ(map->capacity, (size_t)LINKEDHASHMAP_MIN_SIZE);
+    TEST_ASSERT(map->head == NULL);
+    TEST_ASSERT(map->tail == NULL);
 
     linkedhashmap_free(map);
 }
